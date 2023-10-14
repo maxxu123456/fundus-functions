@@ -10,7 +10,7 @@
 // The Cloud Functions for Firebase SDK to create Cloud Functions and triggers.
 var fetch = require("node-fetch");
 
-const { logger } = require("firebase-functions");
+const { logger, firestore } = require("firebase-functions");
 const { onRequest } = require("firebase-functions/v2/https");
 const {
   onDocumentCreated,
@@ -28,9 +28,6 @@ exports.executePayout = onDocumentUpdated("/posts/{postId}", async (event) => {
   randVal = new Date().toString();
   const newValue = event.data.after.data();
   if (newValue.peopleJoined.length >= newValue.minPeople) {
-    // logger.log("Confimed Greater");
-
-    // await getFirestore().collection("test").add({ name: "TEST!" });
     var myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
     myHeaders.append(
@@ -80,7 +77,17 @@ exports.executePayout = onDocumentUpdated("/posts/{postId}", async (event) => {
               },
             ],
           }),
-        }).catch((error) => console.log(error));
+        })
+          .then((response) => {
+            console.log("after part runs");
+            const postRef = getFirestore()
+              .collection("posts")
+              .doc(event.params.postId);
+            return postRef.update({ completed: true });
+          })
+          .then(() => {
+            console.log("finally done!");
+          });
       })
       .catch((error) => console.log("error", error));
   }
